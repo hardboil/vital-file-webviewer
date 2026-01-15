@@ -2,7 +2,8 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   root: '.',
-  base: './',
+  // GitHub Pages: /repo-name/ | Local: ./
+  base: process.env.GITHUB_ACTIONS ? '/vital-file-webviewer/' : './',
   build: {
     outDir: 'dist',
     minify: 'terser',
