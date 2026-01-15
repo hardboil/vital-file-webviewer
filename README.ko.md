@@ -116,9 +116,8 @@ npm run build
 │   │   ├── export/             # 스크린샷, CSV 내보내기
 │   │   └── api/                # VitalDB API 클라이언트
 │   └── css/
-├── docs/
-│   ├── original-source/        # 원본 단일 HTML 버전
-│   └── publications/           # VitalDB 관련 연구 논문
+├── Makefile                    # 빌드 명령어
+├── README.md / README.ko.md    # 문서 (영어/한국어)
 └── LICENSE
 ```
 

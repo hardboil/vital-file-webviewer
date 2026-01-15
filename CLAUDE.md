@@ -16,9 +16,9 @@ VitalDB Viewer는 `.vital` 파일을 위한 브라우저 기반 뷰어입니다.
 │   ├── tailwind.config.js
 │   ├── js/                     # ES 모듈 소스
 │   └── css/
-├── docs/
-│   ├── original-source/        # 원본 단일 HTML 버전
-│   └── publications/           # VitalDB 관련 연구 논문
+├── Makefile                    # 빌드 명령어
+├── README.md                   # 영어 문서
+├── README.ko.md                # 한국어 문서
 └── LICENSE
 ```
 
