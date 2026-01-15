@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VitalDB Viewer</title>
+  <link rel="stylesheet" href="./css/main.css">
+</head>
+<body class="bg-monitor-bg text-white font-mono overflow-hidden">
+  <div id="app" class="h-screen flex flex-col">
+    <!-- Header -->
+    <header id="header" class="h-12 flex items-center justify-between px-4 bg-monitor-panel border-b border-monitor-border shrink-0">
+      <div class="flex items-center gap-3">
+        <button id="btn_toggle_sidebar" class="w-8 h-8 flex items-center justify-center hover:bg-monitor-card rounded transition-colors" title="Toggle Sidebar (S)">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+        <h1 class="text-lg font-semibold text-monitor-accent">VitalDB Viewer</h1>
+        <span id="filename" class="text-sm text-gray-400 ml-2"></span>
+      </div>
+      <div class="flex items-center gap-2">
+        <select id="view_mode_select" class="bg-monitor-card border border-monitor-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-monitor-accent">
+          <option value="monitor">Monitor View</option>
+          <option value="track">Track View</option>
+        </select>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="flex flex-1 overflow-hidden">
+      <!-- Sidebar -->
+      <aside id="sidebar" class="w-64 bg-monitor-panel border-r border-monitor-border flex flex-col shrink-0 overflow-y-auto transition-all duration-300">
+        <!-- View Mode Section -->
+        <section class="p-4 border-b border-monitor-border">
+          <h3 class="text-xs font-semibold text-gray-400 uppercase mb-3">View Mode</h3>
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="view_mode" value="monitor" checked class="accent-monitor-accent">
+              <span class="text-sm">Monitor View</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="view_mode" value="track" class="accent-monitor-accent">
+              <span class="text-sm">Track View</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- Data Source Section -->
+        <section class="p-4 border-b border-monitor-border">
+          <h3 class="text-xs font-semibold text-gray-400 uppercase mb-3">Data Source</h3>
+
+          <!-- Local File -->
+          <div class="mb-4">
+            <div id="drop_zone" class="border-2 border-dashed border-monitor-border rounded-lg p-4 text-center hover:border-monitor-accent transition-colors cursor-pointer">
+              <div class="text-2xl mb-2">📁</div>
+              <div class="text-sm text-gray-400">Drop .vital file here</div>
+              <div class="text-xs text-gray-500 mt-1">or click to browse</div>
+            </div>
+            <input type="file" id="file_input" accept=".vital" class="hidden">
+          </div>
+
+          <!-- VitalDB Browser -->
+          <button id="btn_browse_vitaldb" class="w-full bg-monitor-card hover:bg-monitor-border border border-monitor-border rounded px-3 py-2 text-sm transition-colors mb-3">
+            Browse VitalDB Dataset
+          </button>
+
+          <!-- Local Data Files -->
+          <div class="flex gap-2">
+            <select id="local_file_select" class="flex-1 bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
+              <option value="">Select file...</option>
+            </select>
+            <button id="btn_load_local" disabled class="bg-monitor-accent text-black px-3 py-1.5 rounded text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+              Load
+            </button>
+          </div>
+        </section>
+
+        <!-- Track Filter Section -->
+        <section id="track_filter_section" class="p-4 border-b border-monitor-border">
+          <h3 class="text-xs font-semibold text-gray-400 uppercase mb-3">Track Filter</h3>
+          <div id="track_filter_list" class="space-y-2 max-h-48 overflow-y-auto">
+            <div class="text-sm text-gray-500">Load a file to see tracks</div>
+          </div>
+        </section>
+
+        <!-- Settings Section -->
+        <section class="p-4 border-b border-monitor-border">
+          <h3 class="text-xs font-semibold text-gray-400 uppercase mb-3">Settings</h3>
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs text-gray-400 block mb-1">Track View Mode</label>
+              <select id="track_display_mode" class="w-full bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
+                <option value="fixed">Fixed Time Window</option>
+                <option value="scroll">Scroll-based</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- Export Section -->
+        <section class="p-4">
+          <h3 class="text-xs font-semibold text-gray-400 uppercase mb-3">Export</h3>
+          <div class="space-y-2">
+            <button id="btn_export_screenshot" disabled class="w-full bg-monitor-card hover:bg-monitor-border border border-monitor-border rounded px-3 py-2 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+              <span>📷</span> Screenshot
+            </button>
+            <button id="btn_export_csv" disabled class="w-full bg-monitor-card hover:bg-monitor-border border border-monitor-border rounded px-3 py-2 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+              <span>📊</span> CSV Export
+            </button>
+          </div>
+        </section>
+      </aside>
+
+      <!-- Canvas Area -->
+      <main id="main_content" class="flex-1 flex flex-col overflow-hidden">
+        <!-- Patient Info Bar (hidden by default) -->
+        <div id="patient_info_bar" class="hidden bg-monitor-card border-b border-monitor-border px-4 py-2 shrink-0">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4 text-sm">
+              <span id="patient_case_id" class="font-semibold text-monitor-accent"></span>
+              <span id="patient_sex_age" class="text-gray-400"></span>
+              <span id="patient_department" class="text-gray-400"></span>
+              <span id="patient_opname" class="text-gray-400 truncate max-w-md"></span>
+            </div>
+            <button id="btn_expand_patient_info" class="text-gray-400 hover:text-white">
+              <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+          </div>
+          <!-- Expanded Info (hidden by default) -->
+          <div id="patient_info_expanded" class="hidden mt-2 pt-2 border-t border-monitor-border text-sm text-gray-400">
+            <div class="grid grid-cols-4 gap-4">
+              <div><span class="text-gray-500">ASA:</span> <span id="patient_asa">-</span></div>
+              <div><span class="text-gray-500">BMI:</span> <span id="patient_bmi">-</span></div>
+              <div><span class="text-gray-500">Weight:</span> <span id="patient_weight">-</span></div>
+              <div><span class="text-gray-500">Height:</span> <span id="patient_height">-</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div id="canvas_container" class="flex-1 relative overflow-hidden bg-monitor-bg">
+          <canvas id="main_canvas" class="absolute inset-0"></canvas>
+          <!-- Welcome Message (shown when no file loaded) -->
+          <div id="welcome_message" class="absolute inset-0 flex items-center justify-center">
+            <div class="text-center">
+              <div class="text-6xl mb-4">💓</div>
+              <h2 class="text-2xl font-semibold mb-2">Welcome to VitalDB Viewer</h2>
+              <p class="text-gray-400 mb-4">Drop a .vital file or browse VitalDB dataset to get started</p>
+              <div class="text-sm text-gray-500">
+                Keyboard: Space (play/pause), ←→ (seek), Home/End (jump)
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Minimap -->
+        <div id="minimap_container" class="h-16 bg-monitor-panel border-t border-monitor-border shrink-0 hidden">
+          <canvas id="minimap_canvas" class="w-full h-full"></canvas>
+        </div>
+
+        <!-- Playback Controls -->
+        <div id="playback_controls" class="bg-monitor-panel border-t border-monitor-border p-3 shrink-0">
+          <!-- Timeline Slider -->
+          <div class="mb-3">
+            <input type="range" id="timeline_slider" min="0" max="100" value="0" class="w-full h-2 bg-monitor-card rounded-lg appearance-none cursor-pointer accent-monitor-accent">
+          </div>
+
+          <!-- Controls Row -->
+          <div class="flex items-center justify-between">
+            <!-- Transport Controls -->
+            <div class="flex items-center gap-1">
+              <button id="btn_start" class="w-10 h-10 flex items-center justify-center hover:bg-monitor-card rounded transition-colors" title="Go to Start (Home)">⏮</button>
+              <button id="btn_back" class="w-10 h-10 flex items-center justify-center hover:bg-monitor-card rounded transition-colors" title="Back 7s (←)">⏪</button>
+              <button id="btn_play" class="w-12 h-12 flex items-center justify-center bg-monitor-card hover:bg-monitor-border rounded-full transition-colors text-xl" title="Play/Pause (Space)">▶</button>
+              <button id="btn_forward" class="w-10 h-10 flex items-center justify-center hover:bg-monitor-card rounded transition-colors" title="Forward 7s (→)">⏩</button>
+              <button id="btn_end" class="w-10 h-10 flex items-center justify-center hover:bg-monitor-card rounded transition-colors" title="Go to End (End)">⏭</button>
+            </div>
+
+            <!-- Speed Controls -->
+            <div id="speed_buttons" class="flex items-center gap-1">
+              <span class="text-xs text-gray-400 mr-2">Speed:</span>
+              <button class="speed-btn px-3 py-1 text-sm rounded hover:bg-monitor-card transition-colors active" data-speed="1">x1</button>
+              <button class="speed-btn px-3 py-1 text-sm rounded hover:bg-monitor-card transition-colors" data-speed="2">x2</button>
+              <button class="speed-btn px-3 py-1 text-sm rounded hover:bg-monitor-card transition-colors" data-speed="4">x4</button>
+              <button class="speed-btn px-3 py-1 text-sm rounded hover:bg-monitor-card transition-colors" data-speed="8">x8</button>
+            </div>
+
+            <!-- Time Display -->
+            <div class="flex items-center gap-2 text-sm font-mono">
+              <span id="time_current" class="text-monitor-accent">00:00:00</span>
+              <span class="text-gray-500">/</span>
+              <span id="time_total" class="text-gray-400">00:00:00</span>
+            </div>
+
+            <!-- Markers (future) -->
+            <div id="markers_section" class="hidden flex items-center gap-2">
+              <button id="btn_add_marker" class="px-3 py-1 text-sm bg-monitor-card hover:bg-monitor-border rounded transition-colors" title="Add Marker (M)">+ Marker</button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- VitalDB Modal -->
+    <div id="vitaldb_modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div class="bg-monitor-panel rounded-lg w-full max-w-3xl max-h-[80vh] flex flex-col border border-monitor-border">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between p-4 border-b border-monitor-border">
+          <h2 class="text-lg font-semibold">VitalDB Open Dataset</h2>
+          <button id="btn_close_modal" class="w-8 h-8 flex items-center justify-center hover:bg-monitor-card rounded transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="p-4 border-b border-monitor-border space-y-3">
+          <div class="flex gap-3">
+            <input type="text" id="case_search" placeholder="Search by Case ID..." class="flex-1 bg-monitor-card border border-monitor-border rounded px-3 py-2 text-sm focus:outline-none focus:border-monitor-accent">
+            <select id="filter_department" class="bg-monitor-card border border-monitor-border rounded px-3 py-2 text-sm">
+              <option value="">All Departments</option>
+            </select>
+          </div>
+          <!-- Advanced Filters (future) -->
+          <div id="advanced_filters" class="hidden grid grid-cols-4 gap-3">
+            <select id="filter_sex" class="bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
+              <option value="">All Sex</option>
+              <option value="M">Male</option>
+              <option value="F">Female</option>
+            </select>
+            <input type="number" id="filter_age_min" placeholder="Min Age" class="bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
+            <input type="number" id="filter_age_max" placeholder="Max Age" class="bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
+            <input type="number" id="filter_duration" placeholder="Min Duration (h)" class="bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
+          </div>
+        </div>
+
+        <!-- Case List -->
+        <div id="case_list" class="flex-1 overflow-y-auto p-4 space-y-2">
+          <div class="text-center text-gray-400 py-8">Loading cases...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading_overlay" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+      <div class="text-center">
+        <div class="mb-4">
+          <div class="w-16 h-16 border-4 border-monitor-accent border-t-transparent rounded-full animate-spin mx-auto"></div>
+        </div>
+        <div id="loading_text" class="text-lg mb-2">Loading...</div>
+        <div class="w-64 h-2 bg-monitor-card rounded-full overflow-hidden">
+          <div id="loading_bar" class="h-full bg-monitor-accent transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast_container" class="fixed bottom-24 right-4 z-50 space-y-2"></div>
+  </div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>

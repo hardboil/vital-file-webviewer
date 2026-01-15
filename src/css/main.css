@@ -1,0 +1,336 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   Custom Properties
+   ============================================ */
+:root {
+  /* Monitor Colors */
+  --monitor-bg: #181818;
+  --monitor-panel: #1a1a1a;
+  --monitor-card: #222222;
+  --monitor-border: #333333;
+  --monitor-accent: #00ff00;
+  --monitor-text: #ffffff;
+
+  /* Waveform Colors */
+  --wave-ecg: #00FF00;
+  --wave-abp: #FF0000;
+  --wave-pleth: #82CEFC;
+  --wave-cvp: #FAA804;
+  --wave-eeg: #DAA2DC;
+  --wave-resp: #FFFF00;
+  --wave-co2: #00FFFF;
+  --wave-agent: #FF69B4;
+  --wave-bis: #FFA500;
+  --wave-entropy: #9370DB;
+  --wave-temp: #FFD700;
+  --wave-nibp: #FF6347;
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--monitor-border) var(--monitor-bg);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--monitor-bg);
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--monitor-border);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #444444;
+}
+
+body {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+/* ============================================
+   Form Elements
+   ============================================ */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+input[type="range"]::-webkit-slider-track {
+  background: var(--monitor-card);
+  height: 8px;
+  border-radius: 4px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--monitor-accent);
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -4px;
+}
+
+input[type="range"]::-moz-range-track {
+  background: var(--monitor-card);
+  height: 8px;
+  border-radius: 4px;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--monitor-accent);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--monitor-accent);
+}
+
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--monitor-accent);
+}
+
+select {
+  cursor: pointer;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--monitor-accent);
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+  outline: none;
+  border-color: var(--monitor-accent);
+}
+
+/* ============================================
+   Sidebar
+   ============================================ */
+#sidebar {
+  transition: width 0.3s ease, margin 0.3s ease;
+}
+
+#sidebar.collapsed {
+  width: 0;
+  margin-left: -1px;
+  overflow: hidden;
+}
+
+#sidebar.collapsed > * {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* ============================================
+   Playback Controls
+   ============================================ */
+.speed-btn {
+  min-width: 40px;
+}
+
+.speed-btn.active {
+  background-color: var(--monitor-accent);
+  color: black;
+}
+
+#btn_play.active {
+  background-color: var(--monitor-accent);
+  color: black;
+}
+
+/* ============================================
+   Track Filter
+   ============================================ */
+.track-filter-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.track-filter-item label {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.track-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   Case List (VitalDB Modal)
+   ============================================ */
+.case-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: var(--monitor-card);
+  border: 1px solid var(--monitor-border);
+  border-radius: 8px;
+  transition: border-color 0.2s;
+}
+
+.case-item:hover {
+  border-color: var(--monitor-accent);
+}
+
+.case-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.case-id {
+  font-weight: 600;
+  color: var(--monitor-accent);
+}
+
+.case-meta {
+  font-size: 12px;
+  color: #888;
+}
+
+.case-load-btn {
+  padding: 6px 16px;
+  background: var(--monitor-accent);
+  color: black;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.case-load-btn:hover {
+  opacity: 0.9;
+}
+
+/* ============================================
+   Toast Notifications
+   ============================================ */
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--monitor-card);
+  border: 1px solid var(--monitor-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  animation: slideInRight 0.3s ease;
+  max-width: 360px;
+}
+
+.toast.success {
+  border-color: var(--monitor-accent);
+}
+
+.toast.error {
+  border-color: #ff4444;
+}
+
+.toast.warning {
+  border-color: #ffaa00;
+}
+
+.toast-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.toast-message {
+  font-size: 14px;
+  color: var(--monitor-text);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.toast.fade-out {
+  animation: fadeOut 0.3s ease forwards;
+}
+
+/* ============================================
+   Drop Zone
+   ============================================ */
+#drop_zone.drag-over {
+  border-color: var(--monitor-accent);
+  background: rgba(0, 255, 0, 0.05);
+}
+
+/* ============================================
+   Canvas
+   ============================================ */
+#main_canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+#minimap_canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* ============================================
+   Patient Info
+   ============================================ */
+#patient_info_bar.expanded #btn_expand_patient_info svg {
+  transform: rotate(180deg);
+}
+
+/* ============================================
+   Utilities
+   ============================================ */
+.truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
