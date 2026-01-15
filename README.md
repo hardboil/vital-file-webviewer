@@ -1,12 +1,13 @@
 # VitalDB Viewer
 
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+[![Demo](https://img.shields.io/badge/Demo-GitHub%20Pages-blue)](https://hardboil.github.io/vital-file-webviewer/)
+
+**[Live Demo](https://hardboil.github.io/vital-file-webviewer/)** | [한국어 README](README.ko.md)
 
 A browser-based viewer for `.vital` files - the medical vital signs data format used by [VitalDB](https://vitaldb.net). Visualize real-time waveforms (ECG, arterial blood pressure, plethysmograph) and patient monitoring data with a professional medical device-style dark theme.
 
 > **Based on**: [vitaldb/vitalfile_webviewer](https://github.com/vitaldb/vitalfile_webviewer) - Original VitalDB web viewer
-
-[한국어 README](README.ko.md)
 
 ## Features
 

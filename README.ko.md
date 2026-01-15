@@ -1,12 +1,13 @@
 # VitalDB Viewer
 
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+[![Demo](https://img.shields.io/badge/Demo-GitHub%20Pages-blue)](https://hardboil.github.io/vital-file-webviewer/)
+
+**[라이브 데모](https://hardboil.github.io/vital-file-webviewer/)** | [English README](README.md)
 
 [VitalDB](https://vitaldb.net)에서 사용하는 의료 활력징후 데이터 포맷인 `.vital` 파일을 위한 브라우저 기반 뷰어입니다. ECG, 동맥압, plethysmograph 등의 실시간 waveform과 환자 모니터링 데이터를 의료기기 스타일의 다크 테마로 시각화합니다.
 
 > **원본 프로젝트**: [vitaldb/vitalfile_webviewer](https://github.com/vitaldb/vitalfile_webviewer) - VitalDB 공식 웹 뷰어
-
-[English README](README.md)
 
 ## 주요 기능
 
