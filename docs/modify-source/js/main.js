@@ -52,6 +52,14 @@ const elements = {
     btnCloseModal: document.getElementById('btn_close_modal'),
     caseSearch: document.getElementById('case_search'),
     filterDepartment: document.getElementById('filter_department'),
+    filterSex: document.getElementById('filter_sex'),
+    filterAgeMin: document.getElementById('filter_age_min'),
+    filterAgeMax: document.getElementById('filter_age_max'),
+    ageMinDisplay: document.getElementById('age_min_display'),
+    ageMaxDisplay: document.getElementById('age_max_display'),
+    filterAsa: document.getElementById('filter_asa'),
+    totalCases: document.getElementById('total_cases'),
+    matchCount: document.getElementById('match_count'),
     caseList: document.getElementById('case_list'),
 
     // Patient Info Bar
@@ -235,6 +243,12 @@ function setupEventListeners() {
 
     elements.caseSearch.addEventListener('input', filterCaseList);
     elements.filterDepartment.addEventListener('change', filterCaseList);
+    elements.filterSex.addEventListener('change', filterCaseList);
+    elements.filterAsa.addEventListener('change', filterCaseList);
+
+    // Age range slider events
+    elements.filterAgeMin.addEventListener('input', handleAgeSliderInput);
+    elements.filterAgeMax.addEventListener('input', handleAgeSliderInput);
 
     // Keyboard shortcuts
     playback.setupKeyboardShortcuts();
@@ -277,12 +291,31 @@ function createCaseItem(display, onLoad) {
     idSpan.className = 'case-id';
     idSpan.textContent = display.label;
 
-    const metaSpan = document.createElement('span');
-    metaSpan.className = 'case-meta';
-    metaSpan.textContent = display.meta;
+    const sexAgeSpan = document.createElement('span');
+    sexAgeSpan.className = 'case-meta';
+    sexAgeSpan.textContent = display.sexAge;
 
-    info.appendChild(idSpan);
-    info.appendChild(metaSpan);
+    // ASA badge
+    if (display.asa) {
+        const asaBadge = document.createElement('span');
+        asaBadge.className = `asa-badge asa-badge-${display.asa}`;
+        asaBadge.textContent = `ASA ${display.asa}`;
+        info.appendChild(idSpan);
+        info.appendChild(sexAgeSpan);
+        info.appendChild(asaBadge);
+    } else {
+        info.appendChild(idSpan);
+        info.appendChild(sexAgeSpan);
+    }
+
+    const opnameSpan = document.createElement('span');
+    opnameSpan.className = 'case-meta';
+    opnameSpan.style.flex = '1';
+    opnameSpan.style.overflow = 'hidden';
+    opnameSpan.style.textOverflow = 'ellipsis';
+    opnameSpan.style.whiteSpace = 'nowrap';
+    opnameSpan.textContent = display.opname;
+    info.appendChild(opnameSpan);
 
     const loadBtn = document.createElement('button');
     loadBtn.className = 'case-load-btn';
@@ -376,16 +409,20 @@ async function openVitalDBModal() {
     if (allCases.length === 0) {
         clearElement(elements.caseList);
         elements.caseList.appendChild(createMessageDiv('Loading cases...'));
+        elements.totalCases.textContent = 'Loading...';
 
         try {
             allCases = await vitaldbClient.getCases();
             populateDepartmentFilter();
-            renderCaseList(allCases);
+            initializeAgeSlider();
+            elements.totalCases.textContent = `${allCases.length.toLocaleString()} cases available`;
+            filterCaseList();
         } catch (err) {
             clearElement(elements.caseList);
             elements.caseList.appendChild(
                 createMessageDiv(`Failed to load cases: ${err.message}`, '#ff6666')
             );
+            elements.totalCases.textContent = 'Failed to load';
         }
     }
 }
@@ -403,11 +440,51 @@ function populateDepartmentFilter() {
     }
 }
 
+function initializeAgeSlider() {
+    const ageRange = vitaldbClient.getAgeRange(allCases);
+    elements.filterAgeMin.min = ageRange.min;
+    elements.filterAgeMin.max = ageRange.max;
+    elements.filterAgeMin.value = ageRange.min;
+    elements.filterAgeMax.min = ageRange.min;
+    elements.filterAgeMax.max = ageRange.max;
+    elements.filterAgeMax.value = ageRange.max;
+    elements.ageMinDisplay.textContent = ageRange.min;
+    elements.ageMaxDisplay.textContent = ageRange.max;
+}
+
+function handleAgeSliderInput() {
+    let minVal = parseInt(elements.filterAgeMin.value, 10);
+    let maxVal = parseInt(elements.filterAgeMax.value, 10);
+
+    // Prevent crossing
+    if (minVal > maxVal) {
+        if (this === elements.filterAgeMin) {
+            minVal = maxVal;
+            elements.filterAgeMin.value = minVal;
+        } else {
+            maxVal = minVal;
+            elements.filterAgeMax.value = maxVal;
+        }
+    }
+
+    elements.ageMinDisplay.textContent = minVal;
+    elements.ageMaxDisplay.textContent = maxVal;
+    filterCaseList();
+}
+
 function filterCaseList() {
     const filtered = vitaldbClient.filterCases(allCases, {
         search: elements.caseSearch.value,
-        department: elements.filterDepartment.value
+        department: elements.filterDepartment.value,
+        sex: elements.filterSex.value,
+        ageMin: parseInt(elements.filterAgeMin.value, 10),
+        ageMax: parseInt(elements.filterAgeMax.value, 10),
+        asa: elements.filterAsa.value
     });
+
+    // Update match count
+    elements.matchCount.textContent = `${filtered.length.toLocaleString()} matches`;
+
     renderCaseList(filtered.slice(0, 100));
 }
 

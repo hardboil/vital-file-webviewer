@@ -125,6 +125,117 @@
 }
 
 /* ============================================
+   ASA Badge
+   ============================================ */
+.asa-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    background: #333333;
+    color: #888888;
+    border: 1px solid #444444;
+}
+
+.asa-badge-1 {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.asa-badge-2 {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.asa-badge-3 {
+    background: rgba(234, 179, 8, 0.15);
+    color: #eab308;
+    border-color: rgba(234, 179, 8, 0.3);
+}
+
+.asa-badge-4 {
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+    border-color: rgba(249, 115, 22, 0.3);
+}
+
+.asa-badge-5 {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ============================================
+   Dual Range Age Slider
+   ============================================ */
+.age-slider-container {
+    height: 8px;
+}
+
+.age-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    position: absolute;
+    width: 100%;
+    height: 8px;
+    background: transparent;
+    pointer-events: none;
+    top: 0;
+    left: 0;
+}
+
+.age-slider-min {
+    z-index: 1;
+}
+
+.age-slider-max {
+    z-index: 2;
+}
+
+.age-slider-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: #333333;
+    border-radius: 4px;
+}
+
+.age-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #00ff00;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 0 8px rgba(0, 255, 0, 0.3);
+    position: relative;
+    z-index: 3;
+}
+
+.age-slider::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 12px rgba(0, 255, 0, 0.5);
+}
+
+.age-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #00ff00;
+    cursor: pointer;
+    pointer-events: auto;
+    border: none;
+    box-shadow: 0 0 8px rgba(0, 255, 0, 0.3);
+}
+
+/* ============================================
    Scrollbar
    ============================================ */
 ::-webkit-scrollbar {

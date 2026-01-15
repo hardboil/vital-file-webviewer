@@ -170,16 +170,56 @@
         <div class="bg-monitor-panel border border-monitor-border rounded-xl w-[90%] max-w-3xl max-h-[80vh] flex flex-col">
             <!-- Modal Header -->
             <div class="flex items-center justify-between p-4 border-b border-monitor-border">
-                <h2 class="text-lg font-medium">VitalDB Open Dataset</h2>
+                <div>
+                    <h2 class="text-lg font-medium">VitalDB Open Dataset</h2>
+                    <p class="text-sm text-monitor-text-secondary" id="total_cases">Loading...</p>
+                </div>
                 <button class="w-8 h-8 flex items-center justify-center rounded hover:bg-monitor-card text-monitor-text-secondary hover:text-white transition-colors" id="btn_close_modal">&times;</button>
             </div>
 
             <!-- Modal Filters -->
-            <div class="flex gap-3 p-4 border-b border-monitor-border">
-                <input type="text" class="flex-1 py-2 px-3 bg-monitor-card border border-monitor-border rounded text-sm" id="case_search" placeholder="Search by case ID...">
-                <select class="py-2 px-3 bg-monitor-card border border-monitor-border rounded text-sm" id="filter_department">
-                    <option value="">All Departments</option>
-                </select>
+            <div class="p-4 border-b border-monitor-border space-y-3">
+                <!-- Row 1: Search + Department -->
+                <div class="flex gap-3">
+                    <input type="text" class="flex-1 py-2 px-3 bg-monitor-card border border-monitor-border rounded text-sm" id="case_search" placeholder="Search by case ID or operation name...">
+                    <select class="py-2 px-3 bg-monitor-card border border-monitor-border rounded text-sm" id="filter_department">
+                        <option value="">All Departments</option>
+                    </select>
+                </div>
+
+                <!-- Row 2: Sex + Age Slider + ASA + Match Count -->
+                <div class="flex items-center gap-3">
+                    <!-- Sex Filter -->
+                    <select class="py-2 px-3 bg-monitor-card border border-monitor-border rounded text-sm min-w-[90px]" id="filter_sex">
+                        <option value="">All Sex</option>
+                        <option value="M">M</option>
+                        <option value="F">F</option>
+                    </select>
+
+                    <!-- Age Range Slider -->
+                    <div class="flex-1 flex items-center gap-2">
+                        <span class="text-sm text-monitor-text-secondary">Age:</span>
+                        <span class="text-sm text-monitor-accent font-mono w-6 text-right" id="age_min_display">0</span>
+                        <div class="flex-1 relative age-slider-container">
+                            <input type="range" class="age-slider age-slider-min" id="filter_age_min" min="0" max="120" value="0">
+                            <input type="range" class="age-slider age-slider-max" id="filter_age_max" min="0" max="120" value="120">
+                        </div>
+                        <span class="text-sm text-monitor-accent font-mono w-6" id="age_max_display">120</span>
+                    </div>
+
+                    <!-- ASA Filter -->
+                    <select class="py-2 px-3 bg-monitor-card border border-monitor-border rounded text-sm min-w-[180px]" id="filter_asa">
+                        <option value="">All ASA</option>
+                        <option value="1">ASA 1 - Healthy</option>
+                        <option value="2">ASA 2 - Mild disease</option>
+                        <option value="3">ASA 3 - Severe disease</option>
+                        <option value="4">ASA 4 - Life-threatening</option>
+                        <option value="5">ASA 5 - Moribund</option>
+                    </select>
+
+                    <!-- Match Count -->
+                    <span class="text-sm text-monitor-text-secondary whitespace-nowrap" id="match_count">0 matches</span>
+                </div>
             </div>
 
             <!-- Modal Content -->

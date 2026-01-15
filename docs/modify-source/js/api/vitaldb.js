@@ -183,12 +183,13 @@ export class VitalDBClient {
     /**
      * Filter cases by search query
      * @param {Array} cases - Case list
-     * @param {Object} filters - Filter options
+     * @param {Object} filters - Filter options (search, department, sex, ageMin, ageMax, asa)
      * @returns {Array}
      */
     filterCases(cases, filters = {}) {
         let result = cases;
 
+        // Text search (case ID or operation name)
         if (filters.search) {
             const search = filters.search.toLowerCase();
             result = result.filter(c =>
@@ -197,11 +198,56 @@ export class VitalDBClient {
             );
         }
 
+        // Department filter
         if (filters.department) {
             result = result.filter(c => c.department === filters.department);
         }
 
+        // Sex filter
+        if (filters.sex) {
+            result = result.filter(c => c.sex === filters.sex);
+        }
+
+        // Age range filter
+        if (filters.ageMin !== undefined || filters.ageMax !== undefined) {
+            const ageMin = filters.ageMin ?? 0;
+            const ageMax = filters.ageMax ?? 999;
+            result = result.filter(c => {
+                const age = parseInt(c.age, 10);
+                if (isNaN(age)) return false;
+                return age >= ageMin && age <= ageMax;
+            });
+        }
+
+        // ASA filter
+        if (filters.asa) {
+            result = result.filter(c => String(c.asa) === String(filters.asa));
+        }
+
         return result;
+    }
+
+    /**
+     * Get age range from cases
+     * @param {Array} cases - Case list
+     * @returns {{min: number, max: number}}
+     */
+    getAgeRange(cases) {
+        let min = Infinity;
+        let max = -Infinity;
+
+        for (const c of cases) {
+            const age = parseInt(c.age, 10);
+            if (!isNaN(age)) {
+                if (age < min) min = age;
+                if (age > max) max = age;
+            }
+        }
+
+        return {
+            min: min === Infinity ? 0 : min,
+            max: max === -Infinity ? 120 : max
+        };
     }
 }
 
@@ -213,10 +259,13 @@ export class VitalDBClient {
 export function formatCaseDisplay(caseData) {
     const sex = caseData.sex === 'M' ? 'M' : 'F';
     const age = caseData.age || '?';
+    const asa = caseData.asa ? parseInt(caseData.asa, 10) : null;
 
     return {
         id: caseData.caseid,
         label: `Case ${String(caseData.caseid).padStart(4, '0')}`,
-        meta: `${sex}/${age} | ${caseData.department || 'Unknown'} | ${caseData.opname || ''}`.substring(0, 50)
+        sexAge: `${sex}/${age}`,
+        asa: (asa && asa >= 1 && asa <= 5) ? asa : null,
+        opname: caseData.opname || ''
     };
 }
