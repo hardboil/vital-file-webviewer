@@ -3,7 +3,7 @@
  * Handles play/pause, seek, and speed control
  */
 
-import { getState, setState, get, addMarker } from '../state.js';
+import { getState, setState, get } from '../state.js';
 import { PLAYBACK, SHORTCUTS } from '../config.js';
 import { VIEW_MODES } from '../constants.js';
 
@@ -175,7 +175,8 @@ export class PlaybackController {
       onExport,
       onZoomIn,
       onZoomOut,
-      onResetZoom
+      onResetZoom,
+      onAddMarker
     } = options;
 
     document.addEventListener('keydown', (e) => {
@@ -237,7 +238,7 @@ export class PlaybackController {
         case SHORTCUTS.addMarker:
         case SHORTCUTS.addMarker.toUpperCase():
           e.preventDefault();
-          addMarker();
+          onAddMarker?.();
           break;
         case SHORTCUTS.zoomIn:
         case '=':

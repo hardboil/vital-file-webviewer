@@ -203,9 +203,19 @@
               <span id="time_total" class="text-gray-400">00:00:00</span>
             </div>
 
-            <!-- Markers (future) -->
-            <div id="markers_section" class="hidden flex items-center gap-2">
-              <button id="btn_add_marker" class="px-3 py-1 text-sm bg-monitor-card hover:bg-monitor-border rounded transition-colors" title="Add Marker (M)">+ Marker</button>
+            <!-- Markers -->
+            <div id="markers_section" class="flex items-center gap-2">
+              <button id="btn_add_marker" class="px-3 py-1 text-sm bg-monitor-card hover:bg-monitor-border rounded transition-colors flex items-center gap-1" title="Add Marker (M)">
+                <span>📍</span> Marker
+              </button>
+              <div id="markers_list" class="flex items-center gap-1 overflow-x-auto max-w-xs"></div>
+            </div>
+
+            <!-- Selection Range (Track View only) -->
+            <div id="selection_info" class="hidden flex items-center gap-2">
+              <span class="text-xs text-gray-400">Selection:</span>
+              <span id="selection_range" class="text-xs text-monitor-accent font-mono"></span>
+              <button id="btn_clear_selection" class="text-xs text-gray-400 hover:text-white" title="Clear selection">×</button>
             </div>
           </div>
         </div>

@@ -211,10 +211,62 @@ export class CanvasRenderer {
     // Draw event markers
     drawEventMarkers(ctx, vitalFile, margin.left, margin.top, availableWidth, availableHeight, startTime, endTime);
 
+    // Draw user markers
+    this.drawUserMarkers(margin.left, margin.top, availableWidth, availableHeight, startTime, endTime);
+
     // Draw selection range if exists
     const selectedTimeRange = get('selectedTimeRange');
     if (selectedTimeRange) {
       this.drawSelectionRange(margin.left, margin.top, availableWidth, availableHeight, startTime, endTime, selectedTimeRange);
+    }
+  }
+
+  /**
+   * Draw user-defined markers
+   */
+  drawUserMarkers(x, y, width, height, startTime, endTime) {
+    const { ctx } = this;
+    const markers = get('markers');
+
+    if (!markers || markers.length === 0) return;
+
+    const duration = endTime - startTime;
+    if (duration <= 0) return;
+
+    for (const marker of markers) {
+      if (marker.time < startTime || marker.time > endTime) continue;
+
+      const px = x + ((marker.time - startTime) / duration) * width;
+
+      // Draw marker line
+      ctx.strokeStyle = COLORS.accent;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(px, y);
+      ctx.lineTo(px, y + height);
+      ctx.stroke();
+
+      // Draw marker label background
+      const labelWidth = ctx.measureText(marker.label).width + 8;
+      ctx.fillStyle = COLORS.accent;
+      ctx.fillRect(px - labelWidth / 2, y - 16, labelWidth, 14);
+
+      // Draw marker label text
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 10px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(marker.label, px, y - 9);
+
+      // Draw triangle pointer
+      ctx.beginPath();
+      ctx.moveTo(px - 4, y);
+      ctx.lineTo(px + 4, y);
+      ctx.lineTo(px, y + 6);
+      ctx.closePath();
+      ctx.fillStyle = COLORS.accent;
+      ctx.fill();
     }
   }
 

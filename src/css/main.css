@@ -333,6 +333,49 @@ input[type="number"]:focus {
 }
 
 /* ============================================
+   Markers
+   ============================================ */
+.marker-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--monitor-accent);
+  color: black;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+.marker-btn:hover {
+  opacity: 0.9;
+}
+
+.marker-label {
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.marker-delete {
+  opacity: 0;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  transition: opacity 0.2s;
+}
+
+.marker-btn:hover .marker-delete {
+  opacity: 1;
+}
+
+.marker-delete:hover {
+  color: #ff4444;
+}
+
+/* ============================================
    Drop Zone
    ============================================ */
 #drop_zone.drag-over {

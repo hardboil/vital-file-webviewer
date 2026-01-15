@@ -5,8 +5,8 @@
 
 import { LOCAL_DATA_FILES, LOCAL_DATA_PATH, AUTO_LOAD } from './config.js';
 import { VIEW_MODES, WAVE_GROUPS } from './constants.js';
-import { getState, setState, subscribe, get, toggleTrackVisibility, setAllTracksVisibility, setTrackOrder, moveTrack } from './state.js';
-import { CanvasRenderer } from './renderer/index.js';
+import { getState, setState, subscribe, get, toggleTrackVisibility, setAllTracksVisibility, setTrackOrder, moveTrack, addMarker, removeMarker, setTimeRange } from './state.js';
+import { CanvasRenderer, MinimapRenderer } from './renderer/index.js';
 import { PlaybackController, FileLoader, setupDragDrop, setupFileInput, setupTrackViewInteraction, zoomIn, zoomOut, resetZoom, getZoomInfo } from './controls/index.js';
 import { VitalDBClient, formatCaseDisplay } from './api/vitaldb.js';
 import { formatTime } from './utils/time.js';
@@ -53,6 +53,16 @@ const elements = {
   btnZoomReset: document.getElementById('btn_zoom_reset'),
   zoomLevel: document.getElementById('zoom_level'),
 
+  // Markers
+  markersSection: document.getElementById('markers_section'),
+  btnAddMarker: document.getElementById('btn_add_marker'),
+  markersList: document.getElementById('markers_list'),
+
+  // Selection Info
+  selectionInfo: document.getElementById('selection_info'),
+  selectionRange: document.getElementById('selection_range'),
+  btnClearSelection: document.getElementById('btn_clear_selection'),
+
   // Data Source
   dropZone: document.getElementById('drop_zone'),
   fileInput: document.getElementById('file_input'),
@@ -94,6 +104,7 @@ const elements = {
 // Initialize Application
 // ============================================
 const renderer = new CanvasRenderer(elements.mainCanvas);
+const minimapRenderer = new MinimapRenderer(elements.minimapCanvas);
 const playback = new PlaybackController();
 const vitaldbClient = new VitalDBClient();
 
@@ -111,10 +122,15 @@ let allCases = [];
 
 function handleFileLoaded(vitalFile, filename) {
   renderer.setVitalFile(vitalFile);
+  minimapRenderer.setVitalFile(vitalFile);
   elements.filename.textContent = filename;
 
   // Hide welcome message
   elements.welcomeMessage.classList.add('hidden');
+
+  // Show minimap
+  elements.minimapContainer.classList.remove('hidden');
+  minimapRenderer.resize();
 
   // Update track filter
   updateTrackFilterList();
@@ -126,6 +142,7 @@ function handleFileLoaded(vitalFile, filename) {
   // Start render loop
   playback.setOnFrame(() => {
     renderer.draw(get('currentTime'));
+    minimapRenderer.draw();
   });
   playback.startAnimation();
 
@@ -187,6 +204,23 @@ function updateUI(changed, state) {
   if ('zoomLevel' in changed) {
     const zoomInfo = getZoomInfo();
     elements.zoomLevel.textContent = `${zoomInfo.zoomPercent}%`;
+  }
+
+  // Update markers
+  if ('markers' in changed) {
+    updateMarkersList();
+  }
+
+  // Update selection range
+  if ('selectedTimeRange' in changed) {
+    const range = state.selectedTimeRange;
+    if (range && Math.abs(range.end - range.start) > 0.5) {
+      elements.selectionInfo.classList.remove('hidden');
+      const duration = range.end - range.start;
+      elements.selectionRange.textContent = `${formatTime(range.start)} - ${formatTime(range.end)} (${duration.toFixed(1)}s)`;
+    } else {
+      elements.selectionInfo.classList.add('hidden');
+    }
   }
 }
 
@@ -330,6 +364,57 @@ function handleTrackDrop(e) {
 
   setTrackOrder(order);
   updateTrackFilterList();
+}
+
+// ============================================
+// Marker Functions
+// ============================================
+
+function updateMarkersList() {
+  const markers = get('markers');
+
+  // Clear list
+  while (elements.markersList.firstChild) {
+    elements.markersList.removeChild(elements.markersList.firstChild);
+  }
+
+  if (!markers || markers.length === 0) return;
+
+  for (const marker of markers) {
+    const btn = document.createElement('button');
+    btn.className = 'marker-btn';
+    btn.title = `${marker.label} - ${formatTime(marker.time)}`;
+
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'marker-label';
+    labelSpan.textContent = marker.label;
+
+    const deleteBtn = document.createElement('span');
+    deleteBtn.className = 'marker-delete';
+    deleteBtn.textContent = '×';
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeMarker(marker.id);
+    });
+
+    btn.appendChild(labelSpan);
+    btn.appendChild(deleteBtn);
+
+    btn.addEventListener('click', () => {
+      playback.seekTo(marker.time);
+    });
+
+    elements.markersList.appendChild(btn);
+  }
+}
+
+function handleAddMarker() {
+  const currentTime = get('currentTime');
+  const markers = get('markers');
+  const label = String.fromCharCode(65 + markers.length); // A, B, C, ...
+  addMarker(label);
+  updateMarkersList();
+  showInfo(`Marker ${label} added at ${formatTime(currentTime)}`);
 }
 
 // ============================================
@@ -489,7 +574,10 @@ function setupEventListeners() {
   subscribe(updateUI);
 
   // Window resize
-  window.addEventListener('resize', () => renderer.resize());
+  window.addEventListener('resize', () => {
+    renderer.resize();
+    minimapRenderer.resize();
+  });
 
   // Sidebar
   initSidebar(elements.sidebar, elements.btnToggleSidebar, () => renderer.resize());
@@ -576,6 +664,14 @@ function setupEventListeners() {
     renderer.resize();
   });
 
+  // Add marker
+  elements.btnAddMarker?.addEventListener('click', handleAddMarker);
+
+  // Clear selection
+  elements.btnClearSelection?.addEventListener('click', () => {
+    setTimeRange(null, null);
+  });
+
   // Track display mode
   elements.trackDisplayMode?.addEventListener('change', (e) => {
     setState({ trackDisplayMode: e.target.value });
@@ -607,6 +703,7 @@ function setupEventListeners() {
   playback.setupKeyboardShortcuts({
     onToggleSidebar: toggleSidebar,
     onToggleViewMode: toggleViewMode,
+    onAddMarker: handleAddMarker,
     onZoomIn: () => {
       if (get('viewMode') === VIEW_MODES.TRACK) {
         zoomIn();
@@ -672,8 +769,13 @@ async function autoLoadRandomCase() {
 function init() {
   // Setup
   renderer.resize();
+  minimapRenderer.resize();
   populateLocalFileSelect();
   setupEventListeners();
+
+  // Setup minimap interaction
+  minimapRenderer.setOnSeek((time) => playback.seekTo(time));
+  minimapRenderer.setupInteraction();
 
   console.log('VitalDB Viewer initialized');
 
