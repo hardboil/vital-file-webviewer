@@ -4,7 +4,7 @@
  */
 
 import { AUTO_LOAD } from './config.js';
-import { VIEW_MODES, WAVE_GROUPS } from './constants.js';
+import { VIEW_MODES, WAVE_GROUPS, PARAM_GROUPS } from './constants.js';
 import { getState, setState, subscribe, get, toggleTrackVisibility, setAllTracksVisibility, setTrackOrder, moveTrack, addMarker, removeMarker, setTimeRange } from './state.js';
 import { CanvasRenderer, MinimapRenderer } from './renderer/index.js';
 import { PlaybackController, FileLoader, setupDragDrop, setupFileInput, setupTrackViewInteraction, zoomIn, zoomOut, resetZoom, getZoomInfo } from './controls/index.js';
@@ -45,7 +45,6 @@ const elements = {
   speedButtons: document.getElementById('speed_buttons'),
   timeCurrent: document.getElementById('time_current'),
   timeTotal: document.getElementById('time_total'),
-  timelineSlider: document.getElementById('timeline_slider'),
 
   // Zoom Controls
   zoomControls: document.getElementById('zoom_controls'),
@@ -71,7 +70,6 @@ const elements = {
 
   // Track Filter
   trackFilterList: document.getElementById('track_filter_list'),
-  trackDisplayMode: document.getElementById('track_display_mode'),
 
   // Export
   btnExportScreenshot: document.getElementById('btn_export_screenshot'),
@@ -195,8 +193,6 @@ function updateUI(changed, state) {
   if ('currentTime' in changed || 'duration' in changed) {
     elements.timeCurrent.textContent = formatTime(state.currentTime);
     elements.timeTotal.textContent = formatTime(state.duration);
-    elements.timelineSlider.max = state.duration;
-    elements.timelineSlider.value = state.currentTime;
   }
 
   // Update view mode
@@ -256,10 +252,29 @@ function updateTrackFilterList() {
   let trackOrder = get('trackOrder');
 
   // Get available groups with data
-  const availableGroups = WAVE_GROUPS.filter(group => {
+  const availableGroups = [];
+
+  // 1. Check WAVE_GROUPS (waveform tracks with .prev data)
+  for (const group of WAVE_GROUPS) {
     const wavTrack = vitalFile.montypeTrks[group.wav];
-    return wavTrack && wavTrack.prev && wavTrack.prev.length > 0;
-  });
+    if (wavTrack && wavTrack.prev && wavTrack.prev.length > 0) {
+      availableGroups.push({ ...group, type: 'wave' });
+    }
+  }
+
+  // 2. Check PARAM_GROUPS (parameter tracks with .data arrays)
+  for (const group of PARAM_GROUPS) {
+    // Check if any param in the group has data
+    const hasData = group.params.some(paramName => {
+      const track = vitalFile.montypeTrks[paramName];
+      return track && track.data && track.data.length > 0;
+    });
+    if (hasData) {
+      // Generate name from params if not defined
+      const groupName = group.name || group.params[0].split('_')[0];
+      availableGroups.push({ ...group, name: groupName, type: 'param' });
+    }
+  }
 
   // Initialize visible tracks if empty - all tracks visible by default
   if (Object.keys(visibleTracks).length === 0) {
@@ -653,11 +668,6 @@ function setupEventListeners() {
     }
   });
 
-  // Timeline slider
-  elements.timelineSlider.addEventListener('input', (e) => {
-    playback.seekTo(parseFloat(e.target.value));
-  });
-
   // Drag and drop
   setupDragDrop(elements.dropZone, {
     loadLocalFile: async (file) => {
@@ -730,11 +740,6 @@ function setupEventListeners() {
   // Clear selection
   elements.btnClearSelection?.addEventListener('click', () => {
     setTimeRange(null, null);
-  });
-
-  // Track display mode
-  elements.trackDisplayMode?.addEventListener('change', (e) => {
-    setState({ trackDisplayMode: e.target.value });
   });
 
   // Track View mouse interactions (zoom, pan, click-to-seek, range selection)

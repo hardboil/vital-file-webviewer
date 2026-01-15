@@ -404,6 +404,47 @@ input[type="number"]:focus {
 }
 
 /* ============================================
+   Age Range Slider (Dual Thumb)
+   ============================================ */
+#filter_age_min,
+#filter_age_max {
+  pointer-events: none;
+}
+
+#filter_age_min::-webkit-slider-thumb {
+  pointer-events: auto;
+  position: relative;
+  z-index: 2;
+}
+
+#filter_age_max::-webkit-slider-thumb {
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+}
+
+#filter_age_min::-moz-range-thumb {
+  pointer-events: auto;
+  position: relative;
+  z-index: 2;
+}
+
+#filter_age_max::-moz-range-thumb {
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* Hide track for max slider (uses min slider's track) */
+#filter_age_max::-webkit-slider-track {
+  background: transparent;
+}
+
+#filter_age_max::-moz-range-track {
+  background: transparent;
+}
+
+/* ============================================
    Utilities
    ============================================ */
 .truncate-2 {
