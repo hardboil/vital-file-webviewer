@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VitalDB Viewer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'monitor-bg': '#181818',
+                        'monitor-panel': '#1a1a1a',
+                        'monitor-card': '#222222',
+                        'monitor-border': '#333333',
+                        'monitor-border-light': '#444444',
+                        'monitor-accent': '#00ff00',
+                        'monitor-accent-hover': '#00cc00',
+                        'monitor-text': '#ffffff',
+                        'monitor-text-secondary': '#888888',
+                        'monitor-text-muted': '#555555',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/monitor.css">
+</head>
+<body class="bg-monitor-bg text-monitor-text font-sans overflow-hidden h-screen">
+    <div class="flex h-full">
+        <!-- Left Sidebar -->
+        <aside class="w-64 bg-monitor-panel border-r border-monitor-border flex flex-col">
+            <!-- Logo / Title -->
+            <div class="p-4 border-b border-monitor-border">
+                <h1 class="text-lg font-semibold">VitalDB Viewer</h1>
+                <p class="text-sm text-monitor-text-secondary truncate" id="filename">No file loaded</p>
+            </div>
+
+            <!-- Data Source Options -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-3">
+                <h2 class="text-xs uppercase tracking-wider text-monitor-text-secondary mb-3">Data Source</h2>
+
+                <!-- Local File -->
+                <div class="source-option selected bg-monitor-card border border-monitor-accent/30 rounded-lg p-3 cursor-pointer transition-all hover:border-monitor-border-light" data-source="local">
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="radio" name="source" value="local" checked class="accent-monitor-accent">
+                        <span class="font-medium text-sm">Local File</span>
+                    </div>
+                    <div class="drop-zone border-2 border-dashed border-monitor-border rounded-lg p-4 text-center transition-all" id="drop_zone">
+                        <p class="text-xs text-monitor-text-secondary">
+                            Drop <b>.vital</b> file or <u class="text-monitor-accent cursor-pointer" id="file_select_trigger">browse</u>
+                        </p>
+                        <input type="file" id="file_input" accept=".vital" class="hidden">
+                    </div>
+                </div>
+
+                <!-- VitalDB Open Dataset -->
+                <div class="source-option bg-monitor-card border border-monitor-border rounded-lg p-3 cursor-pointer transition-all hover:border-monitor-border-light" data-source="vitaldb">
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="radio" name="source" value="vitaldb" class="accent-monitor-accent">
+                        <span class="font-medium text-sm">VitalDB Open Dataset</span>
+                    </div>
+                    <button class="w-full py-2 px-3 bg-monitor-panel border border-monitor-border rounded text-sm hover:bg-monitor-card transition-colors" id="btn_browse_vitaldb">
+                        Browse Dataset
+                    </button>
+                </div>
+
+                <!-- Local Data Files -->
+                <div class="source-option bg-monitor-card border border-monitor-border rounded-lg p-3 cursor-pointer transition-all hover:border-monitor-border-light" data-source="local_data">
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="radio" name="source" value="local_data" class="accent-monitor-accent">
+                        <span class="font-medium text-sm">Local Data Files</span>
+                    </div>
+                    <div class="space-y-2">
+                        <select class="w-full py-2 px-3 bg-monitor-panel border border-monitor-border rounded text-sm" id="local_file_select">
+                            <option value="">Select a file...</option>
+                        </select>
+                        <button class="w-full py-2 px-3 bg-monitor-accent text-black rounded text-sm font-medium hover:bg-monitor-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed" id="btn_load_local" disabled>
+                            Load File
+                        </button>
+                    </div>
+                </div>
+
+                <!-- URL Input (Hidden - kept for future use) -->
+                <!--
+                <div class="source-option bg-monitor-card border border-monitor-border rounded-lg p-3 cursor-pointer transition-all hover:border-monitor-border-light" data-source="url">
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="radio" name="source" value="url" class="accent-monitor-accent">
+                        <span class="font-medium text-sm">URL</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" class="flex-1 py-2 px-3 bg-monitor-panel border border-monitor-border rounded text-sm" id="url_input" placeholder="https://...">
+                        <button class="py-2 px-4 bg-monitor-accent text-black rounded text-sm font-medium hover:bg-monitor-accent-hover transition-colors" id="btn_load_url">Load</button>
+                    </div>
+                </div>
+                -->
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col">
+            <!-- Patient Info Bar (hidden by default) -->
+            <div class="hidden bg-monitor-panel border-b border-monitor-border px-4 py-2" id="patient_info_bar">
+                <div class="flex items-center gap-4 text-sm">
+                    <span class="text-monitor-accent font-medium" id="patient_case_id">Case 0000</span>
+                    <span class="text-monitor-text-secondary">|</span>
+                    <span id="patient_sex_age">M/45</span>
+                    <span class="text-monitor-text-secondary">|</span>
+                    <span id="patient_department">Department</span>
+                    <span class="text-monitor-text-secondary">|</span>
+                    <span class="text-monitor-text-muted truncate" id="patient_opname">Operation Name</span>
+                </div>
+            </div>
+
+            <!-- Canvas Area -->
+            <div class="flex-1 relative bg-monitor-bg overflow-hidden" id="canvas_area">
+                <canvas id="monitor_canvas" class="block w-full h-full"></canvas>
+            </div>
+
+            <!-- Bottom Playback Controls -->
+            <div class="bg-monitor-panel border-t border-monitor-border p-4 flex-shrink-0" id="playback_controls">
+                <!-- Timeline Slider -->
+                <div class="mb-3">
+                    <input type="range" class="timeline-slider w-full" id="timeline_slider" min="0" max="100" value="0">
+                </div>
+
+                <!-- Controls Row -->
+                <div class="flex items-center justify-between gap-4">
+                    <!-- Transport Buttons -->
+                    <div class="flex items-center gap-2">
+                        <button class="transport-btn w-10 h-10 border border-monitor-border rounded-lg flex items-center justify-center hover:bg-monitor-card transition-colors" id="btn_start" title="Go to start (Home)">⏮</button>
+                        <button class="transport-btn w-10 h-10 border border-monitor-border rounded-lg flex items-center justify-center hover:bg-monitor-card transition-colors" id="btn_back" title="Back 7s (←)">⏪</button>
+                        <button class="transport-btn play-btn w-14 h-14 border border-monitor-border rounded-xl flex items-center justify-center text-xl hover:bg-monitor-card transition-colors" id="btn_play" title="Play/Pause (Space)">▶</button>
+                        <button class="transport-btn w-10 h-10 border border-monitor-border rounded-lg flex items-center justify-center hover:bg-monitor-card transition-colors" id="btn_forward" title="Forward 7s (→)">⏩</button>
+                        <button class="transport-btn w-10 h-10 border border-monitor-border rounded-lg flex items-center justify-center hover:bg-monitor-card transition-colors" id="btn_end" title="Go to end (End)">⏭</button>
+                    </div>
+
+                    <!-- Speed Buttons -->
+                    <div class="flex items-center gap-1" id="speed_buttons">
+                        <span class="text-xs text-monitor-text-secondary mr-2">Speed</span>
+                        <button class="speed-btn active px-3 py-2 border border-monitor-border rounded text-sm transition-colors" data-speed="1">x1</button>
+                        <button class="speed-btn px-3 py-2 border border-monitor-border rounded text-sm transition-colors" data-speed="2">x2</button>
+                        <button class="speed-btn px-3 py-2 border border-monitor-border rounded text-sm transition-colors" data-speed="4">x4</button>
+                        <button class="speed-btn px-3 py-2 border border-monitor-border rounded text-sm transition-colors" data-speed="8">x8</button>
+                    </div>
+
+                    <!-- Time Display -->
+                    <div class="font-mono text-lg">
+                        <span class="text-monitor-accent" id="time_current">00:00:00</span>
+                        <span class="text-monitor-text-muted mx-1">/</span>
+                        <span class="text-monitor-text-secondary" id="time_total">00:00:00</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="hidden fixed inset-0 bg-monitor-bg/95 flex flex-col items-center justify-center z-50" id="loading_overlay">
+        <div class="text-xl mb-5" id="loading_text">Loading...</div>
+        <div class="w-72 h-1.5 bg-monitor-border rounded-full overflow-hidden">
+            <div class="h-full bg-monitor-accent rounded-full transition-all duration-100" id="loading_bar" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <!-- VitalDB Browser Modal -->
+    <div class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50" id="vitaldb_modal">
+        <div class="bg-monitor-panel border border-monitor-border rounded-xl w-[90%] max-w-3xl max-h-[80vh] flex flex-col">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-4 border-b border-monitor-border">
+                <h2 class="text-lg font-medium">VitalDB Open Dataset</h2>
+                <button class="w-8 h-8 flex items-center justify-center rounded hover:bg-monitor-card text-monitor-text-secondary hover:text-white transition-colors" id="btn_close_modal">&times;</button>
+            </div>
+
+            <!-- Modal Filters -->
+            <div class="flex gap-3 p-4 border-b border-monitor-border">
+                <input type="text" class="flex-1 py-2 px-3 bg-monitor-card border border-monitor-border rounded text-sm" id="case_search" placeholder="Search by case ID...">
+                <select class="py-2 px-3 bg-monitor-card border border-monitor-border rounded text-sm" id="filter_department">
+                    <option value="">All Departments</option>
+                </select>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="flex-1 overflow-y-auto p-3" id="case_list">
+                <!-- Dynamic case list -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden URL elements (kept for future use) -->
+    <input type="hidden" id="url_input" value="">
+    <button id="btn_load_url" class="hidden"></button>
+
+    <!-- Application -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
