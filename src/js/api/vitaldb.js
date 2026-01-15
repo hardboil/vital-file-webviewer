@@ -210,19 +210,19 @@ export class VitalDBClient {
     }
 
     // Filter by age range
-    if (filters.ageMin !== undefined && filters.ageMin !== '') {
+    if (filters.ageMin !== undefined && filters.ageMin !== '' && parseInt(filters.ageMin) > 0) {
       const minAge = parseInt(filters.ageMin);
       result = result.filter(c => parseInt(c.age) >= minAge);
     }
-    if (filters.ageMax !== undefined && filters.ageMax !== '') {
+    if (filters.ageMax !== undefined && filters.ageMax !== '' && parseInt(filters.ageMax) < 100) {
       const maxAge = parseInt(filters.ageMax);
       result = result.filter(c => parseInt(c.age) <= maxAge);
     }
 
-    // Filter by minimum duration
-    if (filters.duration !== undefined && filters.duration !== '') {
-      const minDuration = parseFloat(filters.duration) * 3600; // hours to seconds
-      result = result.filter(c => parseFloat(c.aneend - c.anestart) >= minDuration);
+    // Filter by ASA
+    if (filters.asa !== undefined && filters.asa !== '') {
+      const asaValue = parseInt(filters.asa);
+      result = result.filter(c => parseInt(c.asa) === asaValue);
     }
 
     return result;

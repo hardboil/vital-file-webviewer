@@ -61,19 +61,9 @@
           </div>
 
           <!-- VitalDB Browser -->
-          <button id="btn_browse_vitaldb" class="w-full bg-monitor-card hover:bg-monitor-border border border-monitor-border rounded px-3 py-2 text-sm transition-colors mb-3">
+          <button id="btn_browse_vitaldb" class="w-full bg-monitor-card hover:bg-monitor-border border border-monitor-border rounded px-3 py-2 text-sm transition-colors">
             Browse VitalDB Dataset
           </button>
-
-          <!-- Local Data Files -->
-          <div class="flex gap-2">
-            <select id="local_file_select" class="flex-1 bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
-              <option value="">Select file...</option>
-            </select>
-            <button id="btn_load_local" disabled class="bg-monitor-accent text-black px-3 py-1.5 rounded text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
-              Load
-            </button>
-          </div>
         </section>
 
         <!-- Track Filter Section -->
@@ -203,20 +193,20 @@
               <span id="time_total" class="text-gray-400">00:00:00</span>
             </div>
 
-            <!-- Markers -->
-            <div id="markers_section" class="flex items-center gap-2">
-              <button id="btn_add_marker" class="px-3 py-1 text-sm bg-monitor-card hover:bg-monitor-border rounded transition-colors flex items-center gap-1" title="Add Marker (M)">
-                <span>📍</span> Marker
-              </button>
-              <div id="markers_list" class="flex items-center gap-1 overflow-x-auto max-w-xs"></div>
-            </div>
-
             <!-- Selection Range (Track View only) -->
             <div id="selection_info" class="hidden flex items-center gap-2">
               <span class="text-xs text-gray-400">Selection:</span>
               <span id="selection_range" class="text-xs text-monitor-accent font-mono"></span>
               <button id="btn_clear_selection" class="text-xs text-gray-400 hover:text-white" title="Clear selection">×</button>
             </div>
+          </div>
+
+          <!-- Markers Row -->
+          <div id="markers_section" class="flex items-center gap-3 mt-2 pt-2 border-t border-monitor-border">
+            <button id="btn_add_marker" class="px-3 py-1.5 text-sm bg-monitor-card hover:bg-monitor-border rounded transition-colors flex items-center gap-1" title="Add Marker (M)">
+              <span>📍</span> Add Marker
+            </button>
+            <div id="markers_list" class="flex items-center gap-2 overflow-x-auto flex-1"></div>
           </div>
         </div>
       </main>
@@ -247,15 +237,40 @@
             </button>
           </div>
           <!-- Advanced Filters -->
-          <div id="advanced_filters" class="hidden grid grid-cols-4 gap-3">
-            <select id="filter_sex" class="bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
-              <option value="">All Sex</option>
-              <option value="M">Male</option>
-              <option value="F">Female</option>
-            </select>
-            <input type="number" id="filter_age_min" placeholder="Min Age" min="0" max="120" class="bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
-            <input type="number" id="filter_age_max" placeholder="Max Age" min="0" max="120" class="bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
-            <input type="number" id="filter_duration" placeholder="Min Hours" min="0" step="0.5" class="bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
+          <div id="advanced_filters" class="hidden space-y-3">
+            <div class="grid grid-cols-3 gap-3">
+              <select id="filter_sex" class="bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
+                <option value="">All Sex</option>
+                <option value="M">Male</option>
+                <option value="F">Female</option>
+              </select>
+              <select id="filter_asa" class="bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
+                <option value="">All ASA</option>
+                <option value="1">ASA 1</option>
+                <option value="2">ASA 2</option>
+                <option value="3">ASA 3</option>
+                <option value="4">ASA 4</option>
+                <option value="5">ASA 5</option>
+              </select>
+              <div class="text-sm text-gray-400 flex items-center">
+                <!-- Placeholder for layout balance -->
+              </div>
+            </div>
+            <!-- Age Range Slider -->
+            <div class="space-y-1">
+              <div class="flex items-center justify-between text-xs text-gray-400">
+                <span>Age Range</span>
+                <span id="age_range_display">0 - 100</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-gray-500">0</span>
+                <div class="flex-1 relative h-6 flex items-center">
+                  <input type="range" id="filter_age_min" min="0" max="100" value="0" class="absolute w-full h-2 bg-monitor-card rounded-lg appearance-none cursor-pointer accent-monitor-accent">
+                  <input type="range" id="filter_age_max" min="0" max="100" value="100" class="absolute w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer accent-monitor-accent">
+                </div>
+                <span class="text-xs text-gray-500">100</span>
+              </div>
+            </div>
           </div>
         </div>
 

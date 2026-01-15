@@ -168,7 +168,9 @@ export function moveTrack(trackName, newIndex) {
  */
 export function toggleTrackVisibility(trackName) {
   const visibleTracks = { ...state.visibleTracks };
-  visibleTracks[trackName] = !visibleTracks[trackName];
+  // Handle undefined case: default is visible (true)
+  const currentValue = visibleTracks[trackName] !== false;
+  visibleTracks[trackName] = !currentValue;
   setState({ visibleTracks });
 }
 

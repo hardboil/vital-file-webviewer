@@ -3,7 +3,7 @@
  * Entry point and module integration
  */
 
-import { LOCAL_DATA_FILES, LOCAL_DATA_PATH, AUTO_LOAD } from './config.js';
+import { AUTO_LOAD } from './config.js';
 import { VIEW_MODES, WAVE_GROUPS } from './constants.js';
 import { getState, setState, subscribe, get, toggleTrackVisibility, setAllTracksVisibility, setTrackOrder, moveTrack, addMarker, removeMarker, setTimeRange } from './state.js';
 import { CanvasRenderer, MinimapRenderer } from './renderer/index.js';
@@ -68,8 +68,6 @@ const elements = {
   dropZone: document.getElementById('drop_zone'),
   fileInput: document.getElementById('file_input'),
   btnBrowseVitaldb: document.getElementById('btn_browse_vitaldb'),
-  localFileSelect: document.getElementById('local_file_select'),
-  btnLoadLocal: document.getElementById('btn_load_local'),
 
   // Track Filter
   trackFilterList: document.getElementById('track_filter_list'),
@@ -92,9 +90,10 @@ const elements = {
   btnToggleAdvanced: document.getElementById('btn_toggle_advanced'),
   advancedFilters: document.getElementById('advanced_filters'),
   filterSex: document.getElementById('filter_sex'),
+  filterAsa: document.getElementById('filter_asa'),
   filterAgeMin: document.getElementById('filter_age_min'),
   filterAgeMax: document.getElementById('filter_age_max'),
-  filterDuration: document.getElementById('filter_duration'),
+  ageRangeDisplay: document.getElementById('age_range_display'),
   caseList: document.getElementById('case_list'),
 
   // Patient Info
@@ -104,7 +103,11 @@ const elements = {
   patientDepartment: document.getElementById('patient_department'),
   patientOpname: document.getElementById('patient_opname'),
   btnExpandPatientInfo: document.getElementById('btn_expand_patient_info'),
-  patientInfoExpanded: document.getElementById('patient_info_expanded')
+  patientInfoExpanded: document.getElementById('patient_info_expanded'),
+  patientAsa: document.getElementById('patient_asa'),
+  patientBmi: document.getElementById('patient_bmi'),
+  patientWeight: document.getElementById('patient_weight'),
+  patientHeight: document.getElementById('patient_height')
 };
 
 // ============================================
@@ -249,7 +252,7 @@ function updateTrackFilterList() {
     elements.trackFilterList.removeChild(elements.trackFilterList.firstChild);
   }
 
-  const visibleTracks = get('visibleTracks');
+  let visibleTracks = get('visibleTracks');
   let trackOrder = get('trackOrder');
 
   // Get available groups with data
@@ -257,6 +260,15 @@ function updateTrackFilterList() {
     const wavTrack = vitalFile.montypeTrks[group.wav];
     return wavTrack && wavTrack.prev && wavTrack.prev.length > 0;
   });
+
+  // Initialize visible tracks if empty - all tracks visible by default
+  if (Object.keys(visibleTracks).length === 0) {
+    visibleTracks = {};
+    for (const group of availableGroups) {
+      visibleTracks[group.name] = true;
+    }
+    setState({ visibleTracks });
+  }
 
   // Initialize track order if empty
   if (trackOrder.length === 0) {
@@ -446,23 +458,6 @@ function toggleTrackFilter() {
 }
 
 // ============================================
-// Local Data Files Functions
-// ============================================
-
-function populateLocalFileSelect() {
-  while (elements.localFileSelect.options.length > 1) {
-    elements.localFileSelect.remove(1);
-  }
-
-  for (const file of LOCAL_DATA_FILES) {
-    const option = document.createElement('option');
-    option.value = file.id;
-    option.textContent = file.label;
-    elements.localFileSelect.appendChild(option);
-  }
-}
-
-// ============================================
 // Patient Info Functions
 // ============================================
 
@@ -473,10 +468,32 @@ function updatePatientInfo(caseData) {
     return;
   }
 
+  // Basic info
   elements.patientCaseId.textContent = `Case ${String(caseData.caseid).padStart(4, '0')}`;
   elements.patientSexAge.textContent = `${caseData.sex || '?'}/${caseData.age || '?'}`;
   elements.patientDepartment.textContent = caseData.department || 'Unknown';
   elements.patientOpname.textContent = caseData.opname || '';
+
+  // Extended info
+  if (elements.patientAsa) {
+    elements.patientAsa.textContent = caseData.asa || '-';
+  }
+  if (elements.patientBmi) {
+    elements.patientBmi.textContent = caseData.bmi
+      ? parseFloat(caseData.bmi).toFixed(1)
+      : '-';
+  }
+  if (elements.patientWeight) {
+    elements.patientWeight.textContent = caseData.weight
+      ? `${caseData.weight}kg`
+      : '-';
+  }
+  if (elements.patientHeight) {
+    elements.patientHeight.textContent = caseData.height
+      ? `${caseData.height}cm`
+      : '-';
+  }
+
   elements.patientInfoBar.classList.remove('hidden');
   renderer.resize();
 }
@@ -525,11 +542,19 @@ function filterCaseList() {
     search: elements.caseSearch.value,
     department: elements.filterDepartment.value,
     sex: elements.filterSex?.value || '',
+    asa: elements.filterAsa?.value || '',
     ageMin: elements.filterAgeMin?.value || '',
-    ageMax: elements.filterAgeMax?.value || '',
-    duration: elements.filterDuration?.value || ''
+    ageMax: elements.filterAgeMax?.value || ''
   });
   renderCaseList(filtered.slice(0, 100));
+}
+
+function updateAgeRangeDisplay() {
+  const min = elements.filterAgeMin?.value || 0;
+  const max = elements.filterAgeMax?.value || 100;
+  if (elements.ageRangeDisplay) {
+    elements.ageRangeDisplay.textContent = `${min} - ${max}`;
+  }
 }
 
 function renderCaseList(cases) {
@@ -648,21 +673,6 @@ function setupEventListeners() {
     }
   });
 
-  // Local data files
-  elements.localFileSelect.addEventListener('change', () => {
-    elements.btnLoadLocal.disabled = !elements.localFileSelect.value;
-  });
-
-  elements.btnLoadLocal.addEventListener('click', async () => {
-    const fileId = elements.localFileSelect.value;
-    const fileInfo = LOCAL_DATA_FILES.find(f => f.id === fileId);
-    if (fileInfo) {
-      const url = LOCAL_DATA_PATH + fileInfo.filename;
-      await fileLoader.loadFromUrl(url);
-      updatePatientInfo(null);
-    }
-  });
-
   // VitalDB browser
   elements.btnBrowseVitaldb.addEventListener('click', openVitalDBModal);
   elements.btnCloseModal.addEventListener('click', closeVitalDBModal);
@@ -682,9 +692,30 @@ function setupEventListeners() {
 
   // Advanced filter inputs
   elements.filterSex?.addEventListener('change', filterCaseList);
-  elements.filterAgeMin?.addEventListener('input', filterCaseList);
-  elements.filterAgeMax?.addEventListener('input', filterCaseList);
-  elements.filterDuration?.addEventListener('input', filterCaseList);
+  elements.filterAsa?.addEventListener('change', filterCaseList);
+
+  // Age range sliders
+  elements.filterAgeMin?.addEventListener('input', () => {
+    // Ensure min doesn't exceed max
+    const minVal = parseInt(elements.filterAgeMin.value);
+    const maxVal = parseInt(elements.filterAgeMax.value);
+    if (minVal > maxVal) {
+      elements.filterAgeMin.value = maxVal;
+    }
+    updateAgeRangeDisplay();
+    filterCaseList();
+  });
+
+  elements.filterAgeMax?.addEventListener('input', () => {
+    // Ensure max doesn't go below min
+    const minVal = parseInt(elements.filterAgeMin.value);
+    const maxVal = parseInt(elements.filterAgeMax.value);
+    if (maxVal < minVal) {
+      elements.filterAgeMax.value = minVal;
+    }
+    updateAgeRangeDisplay();
+    filterCaseList();
+  });
 
   // Patient info expand
   elements.btnExpandPatientInfo?.addEventListener('click', () => {
@@ -796,28 +827,15 @@ async function autoLoadRandomCase() {
   if (!AUTO_LOAD.enabled) return;
 
   try {
-    if (AUTO_LOAD.source === 'vitaldb') {
-      const cases = await vitaldbClient.getCases();
-      if (cases.length > 0) {
-        const randomIndex = Math.floor(Math.random() * cases.length);
-        const randomCase = cases[randomIndex];
-        const url = vitaldbClient.getDownloadUrl(randomCase.caseid);
-        await fileLoader.loadFromUrl(url);
-        updatePatientInfo(randomCase);
-        if (AUTO_LOAD.autoPlay) {
-          playback.play();
-        }
-      }
-    } else if (AUTO_LOAD.source === 'local') {
-      const fileIndex = AUTO_LOAD.localFileIndex;
-      if (fileIndex >= 0 && fileIndex < LOCAL_DATA_FILES.length) {
-        const fileInfo = LOCAL_DATA_FILES[fileIndex];
-        const url = LOCAL_DATA_PATH + fileInfo.filename;
-        await fileLoader.loadFromUrl(url);
-        updatePatientInfo(null);
-        if (AUTO_LOAD.autoPlay) {
-          playback.play();
-        }
+    const cases = await vitaldbClient.getCases();
+    if (cases.length > 0) {
+      const randomIndex = Math.floor(Math.random() * cases.length);
+      const randomCase = cases[randomIndex];
+      const url = vitaldbClient.getDownloadUrl(randomCase.caseid);
+      await fileLoader.loadFromUrl(url);
+      updatePatientInfo(randomCase);
+      if (AUTO_LOAD.autoPlay) {
+        playback.play();
       }
     }
   } catch (err) {
@@ -833,7 +851,6 @@ function init() {
   // Setup
   renderer.resize();
   minimapRenderer.resize();
-  populateLocalFileSelect();
   setupEventListeners();
 
   // Setup minimap interaction

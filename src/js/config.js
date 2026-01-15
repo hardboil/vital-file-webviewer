@@ -3,22 +3,9 @@
  * Application settings and data sources
  */
 
-// Local data files configuration
-export const LOCAL_DATA_FILES = [
-  { id: 'sample_01', filename: 'sample_01.vital', label: 'Sample 01' },
-  { id: 'sample_02', filename: 'sample_02.vital', label: 'Sample 02' },
-  { id: 'sample_03', filename: 'sample_03.vital', label: 'Sample 03' },
-  { id: 'opendata', filename: 'opendata.vital', label: 'Open Data' }
-];
-
-// Local data path (relative to index.html)
-export const LOCAL_DATA_PATH = './data/';
-
 // Auto-load configuration
 export const AUTO_LOAD = {
   enabled: false,
-  source: 'vitaldb', // 'vitaldb' or 'local'
-  localFileIndex: 0,
   autoPlay: false
 };
 

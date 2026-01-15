@@ -62,7 +62,7 @@ export class MinimapRenderer {
     const duration = get('duration');
     if (duration <= 0) return;
 
-    const margin = { left: 40, right: 10, top: 4, bottom: 4 };
+    const margin = { left: 40, right: 50, top: 4, bottom: 4 };
     const width = canvas.width - margin.left - margin.right;
     const height = canvas.height - margin.top - margin.bottom;
 
@@ -72,6 +72,9 @@ export class MinimapRenderer {
 
     // Draw waveform overview (using first available track)
     this.drawWaveformOverview(margin.left, margin.top, width, height, duration);
+
+    // Draw events
+    this.drawEvents(margin.left, margin.top, width, height, duration);
 
     // Draw markers
     this.drawMarkers(margin.left, margin.top, width, height, duration);
@@ -232,6 +235,79 @@ export class MinimapRenderer {
   }
 
   /**
+   * Draw events from vitalFile
+   */
+  drawEvents(x, y, width, height, duration) {
+    const { ctx, vitalFile } = this;
+
+    if (!vitalFile) return;
+
+    // Collect events from various sources
+    const events = [];
+
+    // Check for events in vitalFile.events
+    if (vitalFile.events && Array.isArray(vitalFile.events)) {
+      for (const evt of vitalFile.events) {
+        if (evt.dt !== undefined) {
+          events.push({
+            time: evt.dt - (vitalFile.dtstart || 0),
+            type: evt.type || 'event',
+            label: evt.label || ''
+          });
+        }
+      }
+    }
+
+    // Check for events in string tracks (like annotations)
+    if (vitalFile.montypeTrks) {
+      for (const [key, track] of Object.entries(vitalFile.montypeTrks)) {
+        if (track.type === 5 && track.data && Array.isArray(track.data)) {
+          for (const record of track.data) {
+            if (record.dt !== undefined) {
+              events.push({
+                time: record.dt - (vitalFile.dtstart || 0),
+                type: 'annotation',
+                label: record.val || ''
+              });
+            }
+          }
+        }
+      }
+    }
+
+    if (events.length === 0) return;
+
+    // Draw events
+    for (const evt of events) {
+      if (evt.time < 0 || evt.time > duration) continue;
+
+      const px = x + (evt.time / duration) * width;
+
+      // Different colors for different event types
+      const eventColor = evt.type === 'annotation' ? '#FFA500' : '#FF4444';
+
+      // Draw event triangle at bottom
+      ctx.fillStyle = eventColor;
+      ctx.beginPath();
+      ctx.moveTo(px - 3, y + height);
+      ctx.lineTo(px + 3, y + height);
+      ctx.lineTo(px, y + height - 5);
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw thin line
+      ctx.strokeStyle = eventColor;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(px, y + height - 5);
+      ctx.lineTo(px, y);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /**
    * Draw time labels
    */
   drawTimeLabels(x, y, width, height, duration) {
@@ -245,11 +321,13 @@ export class MinimapRenderer {
     ctx.textAlign = 'right';
     ctx.fillText('0:00', x - 4, y + height / 2);
 
-    // End time
-    ctx.textAlign = 'left';
+    // End time - measure text width and position accordingly
     const minutes = Math.floor(duration / 60);
     const seconds = Math.floor(duration % 60);
-    ctx.fillText(`${minutes}:${seconds.toString().padStart(2, '0')}`, x + width + 4, y + height / 2);
+    const endTimeText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    ctx.textAlign = 'left';
+    ctx.fillText(endTimeText, x + width + 4, y + height / 2);
   }
 
   /**
@@ -260,7 +338,7 @@ export class MinimapRenderer {
 
     const getTimeFromX = (clientX) => {
       const rect = canvas.getBoundingClientRect();
-      const margin = { left: 40, right: 10 };
+      const margin = { left: 40, right: 50 };
       const width = canvas.width - margin.left - margin.right;
       const x = clientX - rect.left - margin.left;
       const duration = get('duration');
