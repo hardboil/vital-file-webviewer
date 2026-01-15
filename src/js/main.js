@@ -5,9 +5,9 @@
 
 import { LOCAL_DATA_FILES, LOCAL_DATA_PATH, AUTO_LOAD } from './config.js';
 import { VIEW_MODES, WAVE_GROUPS } from './constants.js';
-import { getState, setState, subscribe, get, toggleTrackVisibility, setAllTracksVisibility } from './state.js';
+import { getState, setState, subscribe, get, toggleTrackVisibility, setAllTracksVisibility, setTrackOrder, moveTrack } from './state.js';
 import { CanvasRenderer } from './renderer/index.js';
-import { PlaybackController, FileLoader, setupDragDrop, setupFileInput } from './controls/index.js';
+import { PlaybackController, FileLoader, setupDragDrop, setupFileInput, setupTrackViewInteraction, zoomIn, zoomOut, resetZoom, getZoomInfo } from './controls/index.js';
 import { VitalDBClient, formatCaseDisplay } from './api/vitaldb.js';
 import { formatTime } from './utils/time.js';
 import { initSidebar, toggleSidebar } from './ui/sidebar.js';
@@ -45,6 +45,13 @@ const elements = {
   timeCurrent: document.getElementById('time_current'),
   timeTotal: document.getElementById('time_total'),
   timelineSlider: document.getElementById('timeline_slider'),
+
+  // Zoom Controls
+  zoomControls: document.getElementById('zoom_controls'),
+  btnZoomIn: document.getElementById('btn_zoom_in'),
+  btnZoomOut: document.getElementById('btn_zoom_out'),
+  btnZoomReset: document.getElementById('btn_zoom_reset'),
+  zoomLevel: document.getElementById('zoom_level'),
 
   // Data Source
   dropZone: document.getElementById('drop_zone'),
@@ -171,12 +178,23 @@ function updateUI(changed, state) {
     elements.viewModeRadios.forEach(radio => {
       radio.checked = radio.value === state.viewMode;
     });
+    // Show/hide zoom controls based on view mode
+    const isTrackView = state.viewMode === VIEW_MODES.TRACK;
+    elements.zoomControls.classList.toggle('hidden', !isTrackView);
+  }
+
+  // Update zoom level display
+  if ('zoomLevel' in changed) {
+    const zoomInfo = getZoomInfo();
+    elements.zoomLevel.textContent = `${zoomInfo.zoomPercent}%`;
   }
 }
 
 // ============================================
 // Track Filter Functions
 // ============================================
+
+let draggedTrackItem = null;
 
 function updateTrackFilterList() {
   const vitalFile = get('vitalFile');
@@ -191,13 +209,40 @@ function updateTrackFilterList() {
   }
 
   const visibleTracks = get('visibleTracks');
+  let trackOrder = get('trackOrder');
 
-  for (const group of WAVE_GROUPS) {
+  // Get available groups with data
+  const availableGroups = WAVE_GROUPS.filter(group => {
     const wavTrack = vitalFile.montypeTrks[group.wav];
-    if (!wavTrack || !wavTrack.prev || wavTrack.prev.length === 0) continue;
+    return wavTrack && wavTrack.prev && wavTrack.prev.length > 0;
+  });
 
+  // Initialize track order if empty
+  if (trackOrder.length === 0) {
+    trackOrder = availableGroups.map(g => g.name);
+    setTrackOrder(trackOrder);
+  }
+
+  // Sort groups by trackOrder
+  const sortedGroups = [...availableGroups].sort((a, b) => {
+    const indexA = trackOrder.indexOf(a.name);
+    const indexB = trackOrder.indexOf(b.name);
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+    return indexA - indexB;
+  });
+
+  for (const group of sortedGroups) {
     const item = document.createElement('div');
     item.className = 'track-filter-item';
+    item.draggable = true;
+    item.dataset.trackName = group.name;
+
+    // Drag handle
+    const dragHandle = document.createElement('span');
+    dragHandle.className = 'drag-handle';
+    dragHandle.textContent = '⋮⋮';
+    dragHandle.title = 'Drag to reorder';
 
     const label = document.createElement('label');
 
@@ -218,10 +263,73 @@ function updateTrackFilterList() {
     label.appendChild(checkbox);
     label.appendChild(colorDot);
     label.appendChild(nameSpan);
+
+    item.appendChild(dragHandle);
     item.appendChild(label);
+
+    // Drag events
+    item.addEventListener('dragstart', handleTrackDragStart);
+    item.addEventListener('dragend', handleTrackDragEnd);
+    item.addEventListener('dragover', handleTrackDragOver);
+    item.addEventListener('drop', handleTrackDrop);
+    item.addEventListener('dragleave', handleTrackDragLeave);
 
     elements.trackFilterList.appendChild(item);
   }
+}
+
+function handleTrackDragStart(e) {
+  draggedTrackItem = e.currentTarget;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', e.currentTarget.dataset.trackName);
+}
+
+function handleTrackDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  draggedTrackItem = null;
+  // Remove all drag-over classes
+  elements.trackFilterList.querySelectorAll('.drag-over').forEach(el => {
+    el.classList.remove('drag-over');
+  });
+}
+
+function handleTrackDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const item = e.currentTarget;
+  if (item !== draggedTrackItem) {
+    item.classList.add('drag-over');
+  }
+}
+
+function handleTrackDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function handleTrackDrop(e) {
+  e.preventDefault();
+  const targetItem = e.currentTarget;
+  targetItem.classList.remove('drag-over');
+
+  if (!draggedTrackItem || targetItem === draggedTrackItem) return;
+
+  const draggedName = draggedTrackItem.dataset.trackName;
+  const targetName = targetItem.dataset.trackName;
+
+  // Get current order
+  const order = [...get('trackOrder')];
+  const draggedIndex = order.indexOf(draggedName);
+  const targetIndex = order.indexOf(targetName);
+
+  if (draggedIndex === -1 || targetIndex === -1) return;
+
+  // Reorder
+  order.splice(draggedIndex, 1);
+  order.splice(targetIndex, 0, draggedName);
+
+  setTrackOrder(order);
+  updateTrackFilterList();
 }
 
 // ============================================
@@ -473,23 +581,50 @@ function setupEventListeners() {
     setState({ trackDisplayMode: e.target.value });
   });
 
-  // Track View canvas click (time seek)
-  elements.mainCanvas.addEventListener('click', (e) => {
-    if (get('viewMode') !== VIEW_MODES.TRACK) return;
+  // Track View mouse interactions (zoom, pan, click-to-seek, range selection)
+  setupTrackViewInteraction(elements.mainCanvas, {
+    onSeek: (time) => playback.seekTo(time),
+    onRedraw: () => renderer.draw(get('currentTime'))
+  });
 
-    const rect = elements.mainCanvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const time = renderer.getTimeAtX(mouseX);
+  // Zoom controls
+  elements.btnZoomIn?.addEventListener('click', () => {
+    zoomIn();
+    renderer.draw(get('currentTime'));
+  });
 
-    if (time !== null) {
-      playback.seekTo(time);
-    }
+  elements.btnZoomOut?.addEventListener('click', () => {
+    zoomOut();
+    renderer.draw(get('currentTime'));
+  });
+
+  elements.btnZoomReset?.addEventListener('click', () => {
+    resetZoom();
+    renderer.draw(get('currentTime'));
   });
 
   // Keyboard shortcuts
   playback.setupKeyboardShortcuts({
     onToggleSidebar: toggleSidebar,
-    onToggleViewMode: toggleViewMode
+    onToggleViewMode: toggleViewMode,
+    onZoomIn: () => {
+      if (get('viewMode') === VIEW_MODES.TRACK) {
+        zoomIn();
+        renderer.draw(get('currentTime'));
+      }
+    },
+    onZoomOut: () => {
+      if (get('viewMode') === VIEW_MODES.TRACK) {
+        zoomOut();
+        renderer.draw(get('currentTime'));
+      }
+    },
+    onResetZoom: () => {
+      if (get('viewMode') === VIEW_MODES.TRACK) {
+        resetZoom();
+        renderer.draw(get('currentTime'));
+      }
+    }
   });
 }
 

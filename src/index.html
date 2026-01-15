@@ -188,6 +188,14 @@
               <button class="speed-btn px-3 py-1 text-sm rounded hover:bg-monitor-card transition-colors" data-speed="8">x8</button>
             </div>
 
+            <!-- Zoom Controls (Track View only) -->
+            <div id="zoom_controls" class="hidden flex items-center gap-2">
+              <button id="btn_zoom_out" class="w-8 h-8 flex items-center justify-center hover:bg-monitor-card rounded transition-colors text-lg" title="Zoom Out (-)">−</button>
+              <span id="zoom_level" class="text-sm text-gray-400 min-w-[3rem] text-center">100%</span>
+              <button id="btn_zoom_in" class="w-8 h-8 flex items-center justify-center hover:bg-monitor-card rounded transition-colors text-lg" title="Zoom In (+)">+</button>
+              <button id="btn_zoom_reset" class="px-2 py-1 text-xs bg-monitor-card hover:bg-monitor-border rounded transition-colors" title="Reset Zoom (0)">Reset</button>
+            </div>
+
             <!-- Time Display -->
             <div class="flex items-center gap-2 text-sm font-mono">
               <span id="time_current" class="text-monitor-accent">00:00:00</span>

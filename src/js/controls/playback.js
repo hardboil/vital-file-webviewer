@@ -172,7 +172,10 @@ export class PlaybackController {
       onToggleViewMode,
       onToggleTrackFilter,
       onScreenshot,
-      onExport
+      onExport,
+      onZoomIn,
+      onZoomOut,
+      onResetZoom
     } = options;
 
     document.addEventListener('keydown', (e) => {
@@ -239,16 +242,16 @@ export class PlaybackController {
         case SHORTCUTS.zoomIn:
         case '=':
           e.preventDefault();
-          this.zoomIn?.();
+          onZoomIn?.();
           break;
         case SHORTCUTS.zoomOut:
         case '_':
           e.preventDefault();
-          this.zoomOut?.();
+          onZoomOut?.();
           break;
         case SHORTCUTS.resetZoom:
           e.preventDefault();
-          this.resetZoom?.();
+          onResetZoom?.();
           break;
         // Speed shortcuts
         case '1':

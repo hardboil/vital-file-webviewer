@@ -169,7 +169,42 @@ input[type="number"]:focus {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 0;
+  padding: 6px 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s, border-color 0.2s;
+  border: 1px solid transparent;
+  cursor: grab;
+}
+
+.track-filter-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.track-filter-item.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.track-filter-item.drag-over {
+  border-color: var(--monitor-accent);
+  background: rgba(0, 255, 0, 0.1);
+}
+
+.drag-handle {
+  color: #555;
+  cursor: grab;
+  user-select: none;
+  font-size: 12px;
+  letter-spacing: -3px;
+  transition: color 0.2s;
+}
+
+.track-filter-item:hover .drag-handle {
+  color: #888;
+}
+
+.track-filter-item.dragging .drag-handle {
+  cursor: grabbing;
 }
 
 .track-filter-item label {

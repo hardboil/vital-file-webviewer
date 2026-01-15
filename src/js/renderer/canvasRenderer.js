@@ -137,12 +137,24 @@ export class CanvasRenderer {
     const availableHeight = canvas.height - margin.top - margin.bottom;
     const availableWidth = canvas.width - margin.left - margin.right;
 
-    // Count visible wave tracks
-    const visibleWaveTracks = WAVE_GROUPS.filter(group => {
+    // Count visible wave tracks (respect trackOrder)
+    const trackOrder = get('trackOrder');
+    let visibleWaveTracks = WAVE_GROUPS.filter(group => {
       const wavTrack = vitalFile.montypeTrks[group.wav];
       return wavTrack && wavTrack.prev && wavTrack.prev.length > 0 &&
              (visibleTracks[group.name] !== false);
     });
+
+    // Sort by trackOrder if available
+    if (trackOrder && trackOrder.length > 0) {
+      visibleWaveTracks = [...visibleWaveTracks].sort((a, b) => {
+        const indexA = trackOrder.indexOf(a.name);
+        const indexB = trackOrder.indexOf(b.name);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      });
+    }
 
     if (visibleWaveTracks.length === 0) {
       ctx.fillStyle = COLORS.textSecondary;

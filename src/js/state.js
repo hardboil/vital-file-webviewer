@@ -38,6 +38,7 @@ const state = {
 
   // Track filter state
   visibleTracks: {}, // { trackName: boolean }
+  trackOrder: [], // Custom track ordering (group names)
 
   // Patient info (from VitalDB)
   patientInfo: null,
@@ -132,9 +133,33 @@ export function resetState() {
     panOffset: 0,
     selectedTimeRange: null,
     visibleTracks: {},
+    trackOrder: [],
     markers: [],
     availableTracks: []
   });
+}
+
+/**
+ * Set track order
+ * @param {string[]} order - Array of track names in order
+ */
+export function setTrackOrder(order) {
+  setState({ trackOrder: [...order] });
+}
+
+/**
+ * Move track to new position
+ * @param {string} trackName - Track to move
+ * @param {number} newIndex - New position index
+ */
+export function moveTrack(trackName, newIndex) {
+  const order = [...state.trackOrder];
+  const currentIndex = order.indexOf(trackName);
+  if (currentIndex === -1) return;
+
+  order.splice(currentIndex, 1);
+  order.splice(newIndex, 0, trackName);
+  setState({ trackOrder: order });
 }
 
 /**
