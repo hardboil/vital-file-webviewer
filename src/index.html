@@ -238,21 +238,24 @@
         <!-- Filters -->
         <div class="p-4 border-b border-monitor-border space-y-3">
           <div class="flex gap-3">
-            <input type="text" id="case_search" placeholder="Search by Case ID..." class="flex-1 bg-monitor-card border border-monitor-border rounded px-3 py-2 text-sm focus:outline-none focus:border-monitor-accent">
+            <input type="text" id="case_search" placeholder="Search by Case ID or Operation..." class="flex-1 bg-monitor-card border border-monitor-border rounded px-3 py-2 text-sm focus:outline-none focus:border-monitor-accent">
             <select id="filter_department" class="bg-monitor-card border border-monitor-border rounded px-3 py-2 text-sm">
               <option value="">All Departments</option>
             </select>
+            <button id="btn_toggle_advanced" class="px-3 py-2 text-sm bg-monitor-card hover:bg-monitor-border border border-monitor-border rounded transition-colors">
+              ⚙️ Filters
+            </button>
           </div>
-          <!-- Advanced Filters (future) -->
+          <!-- Advanced Filters -->
           <div id="advanced_filters" class="hidden grid grid-cols-4 gap-3">
             <select id="filter_sex" class="bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
               <option value="">All Sex</option>
               <option value="M">Male</option>
               <option value="F">Female</option>
             </select>
-            <input type="number" id="filter_age_min" placeholder="Min Age" class="bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
-            <input type="number" id="filter_age_max" placeholder="Max Age" class="bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
-            <input type="number" id="filter_duration" placeholder="Min Duration (h)" class="bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
+            <input type="number" id="filter_age_min" placeholder="Min Age" min="0" max="120" class="bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
+            <input type="number" id="filter_age_max" placeholder="Max Age" min="0" max="120" class="bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
+            <input type="number" id="filter_duration" placeholder="Min Hours" min="0" step="0.5" class="bg-monitor-card border border-monitor-border rounded px-2 py-1.5 text-sm">
           </div>
         </div>
 

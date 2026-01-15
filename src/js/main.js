@@ -12,6 +12,7 @@ import { VitalDBClient, formatCaseDisplay } from './api/vitaldb.js';
 import { formatTime } from './utils/time.js';
 import { initSidebar, toggleSidebar } from './ui/sidebar.js';
 import { showError, showSuccess, showInfo } from './ui/toast.js';
+import { exportScreenshot, exportFullCSV, exportSelectionCSV } from './export/index.js';
 
 // ============================================
 // DOM Elements
@@ -88,6 +89,12 @@ const elements = {
   btnCloseModal: document.getElementById('btn_close_modal'),
   caseSearch: document.getElementById('case_search'),
   filterDepartment: document.getElementById('filter_department'),
+  btnToggleAdvanced: document.getElementById('btn_toggle_advanced'),
+  advancedFilters: document.getElementById('advanced_filters'),
+  filterSex: document.getElementById('filter_sex'),
+  filterAgeMin: document.getElementById('filter_age_min'),
+  filterAgeMax: document.getElementById('filter_age_max'),
+  filterDuration: document.getElementById('filter_duration'),
   caseList: document.getElementById('case_list'),
 
   // Patient Info
@@ -431,6 +438,13 @@ function toggleViewMode() {
   setViewMode(newMode);
 }
 
+function toggleTrackFilter() {
+  const section = document.getElementById('track_filter_section');
+  if (section) {
+    section.classList.toggle('hidden');
+  }
+}
+
 // ============================================
 // Local Data Files Functions
 // ============================================
@@ -509,7 +523,11 @@ function populateDepartmentFilter() {
 function filterCaseList() {
   const filtered = vitaldbClient.filterCases(allCases, {
     search: elements.caseSearch.value,
-    department: elements.filterDepartment.value
+    department: elements.filterDepartment.value,
+    sex: elements.filterSex?.value || '',
+    ageMin: elements.filterAgeMin?.value || '',
+    ageMax: elements.filterAgeMax?.value || '',
+    duration: elements.filterDuration?.value || ''
   });
   renderCaseList(filtered.slice(0, 100));
 }
@@ -657,6 +675,17 @@ function setupEventListeners() {
   elements.caseSearch.addEventListener('input', filterCaseList);
   elements.filterDepartment.addEventListener('change', filterCaseList);
 
+  // Advanced filters toggle
+  elements.btnToggleAdvanced?.addEventListener('click', () => {
+    elements.advancedFilters?.classList.toggle('hidden');
+  });
+
+  // Advanced filter inputs
+  elements.filterSex?.addEventListener('change', filterCaseList);
+  elements.filterAgeMin?.addEventListener('input', filterCaseList);
+  elements.filterAgeMax?.addEventListener('input', filterCaseList);
+  elements.filterDuration?.addEventListener('input', filterCaseList);
+
   // Patient info expand
   elements.btnExpandPatientInfo?.addEventListener('click', () => {
     const expanded = elements.patientInfoBar.classList.toggle('expanded');
@@ -699,11 +728,45 @@ function setupEventListeners() {
     renderer.draw(get('currentTime'));
   });
 
+  // Export buttons
+  elements.btnExportScreenshot?.addEventListener('click', () => {
+    exportScreenshot(elements.mainCanvas);
+  });
+
+  elements.btnExportCsv?.addEventListener('click', () => {
+    const vitalFile = get('vitalFile');
+    const selectedRange = get('selectedTimeRange');
+    if (selectedRange && Math.abs(selectedRange.end - selectedRange.start) > 0.5) {
+      // Export selected range
+      exportSelectionCSV(vitalFile);
+    } else {
+      // Export full data
+      exportFullCSV(vitalFile);
+    }
+  });
+
   // Keyboard shortcuts
   playback.setupKeyboardShortcuts({
     onToggleSidebar: toggleSidebar,
     onToggleViewMode: toggleViewMode,
+    onToggleTrackFilter: toggleTrackFilter,
     onAddMarker: handleAddMarker,
+    onScreenshot: () => {
+      if (get('vitalFile')) {
+        exportScreenshot(elements.mainCanvas);
+      }
+    },
+    onExport: () => {
+      const vitalFile = get('vitalFile');
+      if (vitalFile) {
+        const selectedRange = get('selectedTimeRange');
+        if (selectedRange && Math.abs(selectedRange.end - selectedRange.start) > 0.5) {
+          exportSelectionCSV(vitalFile);
+        } else {
+          exportFullCSV(vitalFile);
+        }
+      }
+    },
     onZoomIn: () => {
       if (get('viewMode') === VIEW_MODES.TRACK) {
         zoomIn();
